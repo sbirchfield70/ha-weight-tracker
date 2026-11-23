@@ -1,0 +1,4 @@
+{"services": {"log_weight": {"service": "mdi:scale-bathroom"}, "log_water": {"service": "mdi:cup-water"},
+ "log_bp": {"service": "mdi:heart-pulse"}, "log_note": {"service": "mdi:note-text"},
+ "quick_add": {"service": "mdi:food"}, "send_summary": {"service": "mdi:message-text"},
+ "ingest": {"service": "mdi:apple"}}}

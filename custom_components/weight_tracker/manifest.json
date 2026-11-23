@@ -1,0 +1,20 @@
+{
+  "domain": "weight_tracker",
+  "name": "Weight Tracker",
+  "codeowners": [
+    "@sbirchfield70"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "webhook",
+    "persistent_notification",
+    "websocket_api"
+  ],
+  "documentation": "https://github.com/sbirchfield70/ha-weight-tracker",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0",
+  "issue_tracker": "https://github.com/sbirchfield70/ha-weight-tracker/issues"
+}

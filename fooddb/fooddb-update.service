@@ -1,0 +1,7 @@
+[Unit]
+Description=Food DB nightly update
+[Service]
+Type=oneshot
+User=fooddb
+Nice=10
+ExecStart=/usr/bin/python3 /opt/fooddb/update.py nightly

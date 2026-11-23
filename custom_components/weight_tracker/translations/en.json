@@ -1,0 +1,8 @@
+{
+  "config": {
+    "step": {"user": {"title": "Weight Tracker", "description": "Address of your food barcode database server (see fooddb/ in the repo).",
+      "data": {"food_db_url": "Food database URL"}}},
+    "abort": {"already_configured": "Weight Tracker is already set up."}
+  },
+  "options": {"step": {"init": {"title": "Weight Tracker", "data": {"food_db_url": "Food database URL"}}}}
+}

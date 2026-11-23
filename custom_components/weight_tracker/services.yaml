@@ -1,0 +1,41 @@
+log_weight:
+  fields:
+    weight: {required: true, example: 185.4, selector: {number: {min: 50, max: 800, step: 0.1}}}
+    unit: {example: lb, selector: {select: {options: [lb, kg]}}}
+    body_fat: {selector: {number: {min: 1, max: 70, step: 0.1}}}
+    source: {selector: {text: {}}}
+    when: {example: "2026-11-23T07:30:00", selector: {text: {}}}
+log_water:
+  fields:
+    oz: {required: true, example: 16, selector: {number: {min: 1, max: 128}}}
+    when: {selector: {text: {}}}
+log_bp:
+  fields:
+    systolic: {required: true, example: 120, selector: {number: {min: 60, max: 260}}}
+    diastolic: {required: true, example: 80, selector: {number: {min: 30, max: 160}}}
+    pulse: {selector: {number: {min: 30, max: 220}}}
+    note: {selector: {text: {}}}
+    when: {selector: {text: {}}}
+log_note:
+  fields:
+    text: {required: true, selector: {text: {multiline: true}}}
+    tag: {selector: {text: {}}}
+    when: {selector: {text: {}}}
+quick_add:
+  fields:
+    meal: {required: true, selector: {select: {options: [breakfast, lunch, dinner, snacks]}}}
+    kcal: {required: true, selector: {number: {min: 0, max: 5000}}}
+    name: {selector: {text: {}}}
+    protein: {selector: {number: {min: 0, max: 500}}}
+    carbs: {selector: {number: {min: 0, max: 1000}}}
+    fat: {selector: {number: {min: 0, max: 500}}}
+    when: {selector: {text: {}}}
+send_summary: {}
+ingest:
+  fields:
+    weight: {example: 185.4, selector: {text: {}}}
+    weight_date: {selector: {text: {}}}
+    systolic: {selector: {text: {}}}
+    diastolic: {selector: {text: {}}}
+    pulse: {selector: {text: {}}}
+    bp_date: {selector: {text: {}}}

@@ -1,0 +1,9 @@
+[Unit]
+Description=Food DB lookup API
+After=network-online.target
+[Service]
+ExecStart=/usr/bin/python3 /opt/fooddb/server.py
+Restart=always
+User=fooddb
+[Install]
+WantedBy=multi-user.target
