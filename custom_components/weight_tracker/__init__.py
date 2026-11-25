@@ -394,7 +394,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data: WTData = hass.data.pop(DOMAIN)
     data.unload()
     await hass.async_add_executor_job(data.store.close)
-    for svc in ("log_weight", "log_water", "log_bp", "log_note", "quick_add", "send_summary", "ingest"):
+    for svc in ("log_weight", "log_water", "log_bp", "log_note", "log_steps", "quick_add", "send_summary", "ingest"):
         hass.services.async_remove(DOMAIN, svc)
     return ok
 
@@ -412,6 +412,11 @@ def _register_services(hass: HomeAssistant, data: WTData) -> None:
     async def log_water(call: ServiceCall):
         day, ts = data.parse_ts(call.data.get("when"))
         await data.run(data.store.add_water, day, ts, call.data["oz"], "service")
+        await data.async_refresh()
+
+    async def log_steps(call: ServiceCall):
+        day, ts = data.parse_ts(call.data.get("when"))
+        await data.run(data.store.set_steps, day, ts, call.data["steps"], call.data.get("source", "healthsync"))
         await data.async_refresh()
 
     async def log_bp(call: ServiceCall):
@@ -444,6 +449,8 @@ def _register_services(hass: HomeAssistant, data: WTData) -> None:
         vol.Optional("body_fat"): vol.Coerce(float), vol.Optional("source"): cv.string, when: cv.string}))
     hass.services.async_register(DOMAIN, "log_water", log_water, vol.Schema({
         vol.Required("oz"): vol.Coerce(float), when: cv.string}))
+    hass.services.async_register(DOMAIN, "log_steps", log_steps, vol.Schema({
+        vol.Required("steps"): vol.Coerce(int), vol.Optional("source"): cv.string, when: cv.string}))
     hass.services.async_register(DOMAIN, "log_bp", log_bp, vol.Schema({
         vol.Required("systolic"): vol.Coerce(int), vol.Required("diastolic"): vol.Coerce(int),
         vol.Optional("pulse"): vol.Coerce(int), vol.Optional("note"): cv.string, when: cv.string}))

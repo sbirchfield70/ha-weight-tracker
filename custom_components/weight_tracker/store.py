@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS water(id INTEGER PRIMARY KEY, ts TEXT, day TEXT, oz R
 CREATE INDEX IF NOT EXISTS wa_day ON water(day);
 CREATE TABLE IF NOT EXISTS notes(id INTEGER PRIMARY KEY, ts TEXT, day TEXT, text TEXT, tag TEXT);
 CREATE INDEX IF NOT EXISTS n_day ON notes(day);
+CREATE TABLE IF NOT EXISTS steps(day TEXT PRIMARY KEY, steps INTEGER, ts TEXT, source TEXT);
 """
 
 
@@ -257,8 +258,18 @@ class Store:
                      "ORDER BY ts", (start, end))
         notes = self._q("SELECT id,day,ts,text FROM notes WHERE day BETWEEN ? AND ? ORDER BY ts DESC",
                         (start, end))
+        steps = self._q("SELECT day,steps FROM steps WHERE day BETWEEN ? AND ? ORDER BY day", (start, end))
         return {"start": start, "end": end, "days": days, "meals": meals, "water": water,
-                "weights": weights, "bp": bp, "notes": notes}
+                "weights": weights, "bp": bp, "notes": notes, "steps": steps}
+
+    def set_steps(self, day, ts, steps, source="healthsync"):
+        """Daily step total; the newest sample for a day wins."""
+        with self.lock:
+            self.con.execute("INSERT INTO steps(day,steps,ts,source) VALUES(?,?,?,?) "
+                             "ON CONFLICT(day) DO UPDATE SET steps=excluded.steps, ts=excluded.ts, "
+                             "source=excluded.source WHERE excluded.ts >= steps.ts",
+                             (day, int(steps), ts, source))
+            self.con.commit()
 
     def history(self, kind, limit=60):
         if kind == "weights":

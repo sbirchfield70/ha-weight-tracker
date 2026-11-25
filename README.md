@@ -15,8 +15,8 @@ A self-hosted food, weight and health log that lives in Home Assistant. Built to
 - **Your own food database server** with about 3 million foods from [Open Food Facts](https://world.openfoodfacts.org) (US products) and [USDA FoodData Central](https://fdc.nal.usda.gov) (branded, foundation and SR legacy), updated every night. Barcodes it doesn't know fall back to the live Open Food Facts API.
 - **Goals:** goal weight, daily calories (with a Mifflin-St Jeor calculator), and goals for protein, carbs, fat, fiber, sugar, sodium, saturated fat and cholesterol.
 - **Water** with one-tap +8 / +16 / +24 oz buttons.
-- **Weight and blood pressure**, entered by hand or synced from **Apple Health** through an iOS Shortcut (so any scale or cuff that writes to Health works). It can also write your daily calories and water back to Health.
-- **Trends:** 7 / 30 / 90 / 365 day charts of calories, weight, macros, water and blood pressure, plus a nutrients table (average per day, last-7-days total, goal).
+- **Weight and blood pressure**, entered by hand or synced from **Apple Health** through an iOS Shortcut (so any scale or cuff that writes to Health works). It can also write your daily calories and water back to Health. Or use the HealthSync app instead of a Shortcut (see below).
+- **Trends:** 7 / 30 / 90 / 365 day charts of calories, weight, steps, macros, water and blood pressure, plus a nutrients table (average per day, last-7-days total, goal).
 - **Notes** for anything else.
 - **Reminders and alerts** (meal reminders, weigh-in, water, daily summary, over-goal) to the dashboard, the companion app, or both.
 - **15 sensors** (`sensor.weight_tracker_*`) for calories today/remaining/7-day average, macros, sodium, water, weight, weight to goal and blood pressure, to use in your own automations and dashboards.
@@ -76,14 +76,15 @@ Open the card's **Settings** tab to set your goals, height and weights, pick whe
 
 ### 5. Apple Health (optional)
 
-See [docs/apple-health.md](docs/apple-health.md) to sync weight and blood pressure from Apple Health and write calories and water back.
+See [docs/apple-health.md](docs/apple-health.md) to sync weight and blood pressure from Apple Health and write calories and water back. The same page shows how to use the [HealthSync](https://github.com/WeaveHubHQ/healthsync-ha) app and integration instead, to send weight and daily steps automatically without building a Shortcut.
 
 ## Services
 
 | Service | What it does |
 |---|---|
-| `weight_tracker.log_weight` | Add a weight (and optional body fat) |
+| `weight_tracker.log_weight` | Add a weight |
 | `weight_tracker.log_water` | Add water in oz |
+| `weight_tracker.log_steps` | Set the step total for a day (newest sample for the day wins) |
 | `weight_tracker.log_bp` | Add a blood pressure reading |
 | `weight_tracker.log_note` | Add a note |
 | `weight_tracker.quick_add` | Add calories (and optional macros) to a meal |

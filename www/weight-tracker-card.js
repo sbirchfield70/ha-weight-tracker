@@ -216,12 +216,16 @@ class WeightTrackerCard extends HTMLElement {
     this._charts.weight = { labels: lab, unit: "lb", goal: s.goal_weight, goalLabel: "Goal", dec: 1, series: [{ name: "Weight", key: "weight", type: "line", values: days.map((d) => wdays[d] ?? null) }] };
     this._charts.macros = { labels: lab, unit: "g", stacked: true, series: [["protein", "Protein"], ["carbs", "Carbs"], ["fat", "Fat"]].map(([k, n]) => ({ name: n, key: k, type: "bar", values: days.map((d) => byDay[d]?.[k] ?? null) })) };
     this._charts.water = { labels: lab, unit: "oz", goal: s.water_goal_oz, goalLabel: "Goal", series: [{ name: "Water", key: "water", type: "bar", values: days.map((d) => water[d] ?? null) }] };
+    const stepd = Object.fromEntries((r.steps || []).map((x) => [x.day, x.steps]));
+    this._charts.steps = { labels: lab, unit: "steps", series: [{ name: "Steps", key: "steps", type: "bar", values: days.map((d) => stepd[d] ?? null) }] };
     const bpd = {}; for (const b of r.bp) bpd[b.day] = b;
     this._charts.bp = { labels: lab, unit: "mmHg", series: [{ name: "Systolic", key: "sys", type: "line", values: days.map((d) => bpd[d]?.systolic ?? null) }, { name: "Diastolic", key: "dia", type: "line", values: days.map((d) => bpd[d]?.diastolic ?? null) }] };
     const box = (id, title, legend) => `<section class="card"><div class="ch"><b>${title}</b>${legend ? `<div class="legend r">${legend}</div>` : ""}</div><div class="chart" data-chart="${id}">${this._svg(this._charts[id])}</div></section>`;
     const lg = (items) => items.map(([k, n]) => `<span><i class="dot" style="background:var(--s-${k})"></i>${n}</span>`).join("");
     h += box("kcal", "Calories per day");
     h += box("weight", "Weight");
+    const stv = (r.steps || []).filter((x) => x.day !== r.end && x.steps > 0);
+    h += box("steps", "Steps per day", `<span class="muted small">${stv.length ? `avg ${num(stv.reduce((a, x) => a + x.steps, 0) / stv.length)} / day` : ""}</span>`);
     h += box("macros", "Protein, carbs & fat (g)", lg([["protein", "Protein"], ["carbs", "Carbs"], ["fat", "Fat"]]));
     h += box("water", "Water (oz)");
     if (r.bp.length) h += box("bp", "Blood pressure", lg([["sys", "Systolic"], ["dia", "Diastolic"]]));
@@ -312,9 +316,9 @@ class WeightTrackerCard extends HTMLElement {
     const today = this._day?.today || isoDate(new Date());
     const st = this._settings || {};
     let h = `<section class="card"><div class="ch"><ha-icon icon="mdi:scale-bathroom"></ha-icon><b>Log weight</b></div>
-      <div class="form3"><label>Weight (lb)<input id="w_val" type="number" step="0.1" inputmode="decimal"></label><label>Body fat % <span class="muted">(optional)</span><input id="w_bf" type="number" step="0.1" inputmode="decimal"></label><label>Date<input id="w_date" type="date" value="${today}" max="${today}"></label></div>
+      <div class="form3"><label>Weight (lb)<input id="w_val" type="number" step="0.1" inputmode="decimal"></label><label>Date<input id="w_date" type="date" value="${today}" max="${today}"></label></div>
       <button class="btn" data-act="log-weight">Save weight</button>
-      <table class="nt hist"><tbody>${hs.weights.map((w) => `<tr><td>${fmtDay(w.day)} <span class="muted small">${fmtTime(w.ts)}</span></td><td class="num"><b>${num(w.weight, 1)}</b> lb${w.body_fat ? ` · ${num(w.body_fat, 1)}%` : ""}</td><td class="muted small">${esc(w.source === "apple_health" ? "Apple Health" : w.source)}</td><td><button class="icon-btn" data-act="del" data-t="weights" data-v="${w.id}" aria-label="Delete"><ha-icon icon="mdi:delete-outline"></ha-icon></button></td></tr>`).join("") || `<tr><td class="muted">No weights yet</td></tr>`}</tbody></table></section>`;
+      <table class="nt hist"><tbody>${hs.weights.map((w) => `<tr><td>${fmtDay(w.day)} <span class="muted small">${fmtTime(w.ts)}</span></td><td class="num"><b>${num(w.weight, 1)}</b> lb</td><td class="muted small">${esc(w.source === "apple_health" ? "Apple Health" : w.source)}</td><td><button class="icon-btn" data-act="del" data-t="weights" data-v="${w.id}" aria-label="Delete"><ha-icon icon="mdi:delete-outline"></ha-icon></button></td></tr>`).join("") || `<tr><td class="muted">No weights yet</td></tr>`}</tbody></table></section>`;
     h += `<section class="card"><div class="ch"><ha-icon icon="mdi:heart-pulse"></ha-icon><b>Log blood pressure</b></div>
       <div class="form3"><label>Systolic<input id="bp_s" type="number" inputmode="numeric" placeholder="120"></label><label>Diastolic<input id="bp_d" type="number" inputmode="numeric" placeholder="80"></label><label>Pulse <span class="muted">(optional)</span><input id="bp_p" type="number" inputmode="numeric"></label></div>
       <div class="form3"><label class="span2">Note <span class="muted">(optional)</span><input id="bp_n" placeholder="e.g. after coffee"></label><label>Date<input id="bp_date" type="date" value="${today}" max="${today}"></label></div>
@@ -324,7 +328,7 @@ class WeightTrackerCard extends HTMLElement {
       <p class="small">If your smart scale or blood-pressure cuff saves to Apple Health, an iPhone Shortcut sends new weight and blood-pressure readings here, and can write your daily calories and water back to Health.</p>
       ${st.webhook_url ? `<label class="small">Shortcut URL (keep it private; anyone with it can add readings)<div class="row"><input readonly value="${esc(st.webhook_url)}" id="hook"><button class="btn" data-act="copy-hook">Copy</button></div></label>` : ""}
       <details><summary>How to set up the Shortcut</summary><ol class="small steps">
-        <li>In your scale's app, turn on writing weight (and body fat) to Apple Health.</li>
+        <li>In your scale's app, turn on writing weight to Apple Health.</li>
         <li>In Shortcuts, create <b>"Sync Health to Home"</b>: <b>Find Health Samples</b> where Type is Weight, Start Date is in the last 1 day, sorted latest first, limit 5.</li>
         <li>Add <b>Find Health Samples</b> for Blood Pressure Systolic and for Diastolic (last 1 day).</li>
         <li><b>Get Contents of URL</b>: the URL above, Method POST, Request Body JSON with keys <code>weight</code>, <code>weight_date</code> (Start Date of the weight samples), <code>systolic</code>, <code>diastolic</code>, <code>bp_date</code>.</li>
@@ -438,7 +442,7 @@ class WeightTrackerCard extends HTMLElement {
       body = `<div class="form3"><label>Ounces<input id="wa_oz" type="number" inputmode="decimal" value="12"></label></div><div class="btnrow wide"><button class="btn big" data-act="save-water">Add</button></div>`;
     } else if (sh.mode === "weight") {
       title = "Log weight";
-      body = `<div class="form3"><label>Weight (lb)<input id="w_val2" type="number" step="0.1" inputmode="decimal" value="${this._day?.summary?.weight ?? ""}"></label><label>Body fat % <span class="muted">(optional)</span><input id="w_bf2" type="number" step="0.1" inputmode="decimal"></label></div><div class="btnrow wide"><button class="btn big" data-act="save-weight2">Save</button></div>`;
+      body = `<div class="form3"><label>Weight (lb)<input id="w_val2" type="number" step="0.1" inputmode="decimal" value="${this._day?.summary?.weight ?? ""}"></label></div><div class="btnrow wide"><button class="btn big" data-act="save-weight2">Save</button></div>`;
     }
     el.innerHTML = `<div class="backdrop" data-act="close"></div><div class="panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="ph"><b>${esc(title)}</b><button class="icon-btn" data-act="close" aria-label="Close"><ha-icon icon="mdi:close"></ha-icon></button></div><div class="pb">${body}</div></div>`;
     if (sh.mode === "camera") this._startCamera();
@@ -666,8 +670,8 @@ class WeightTrackerCard extends HTMLElement {
         this._sheet = { mode: "add", meal: sh.meal }; return this._openFood(r.food);
       }
       case "save-water": { const oz = parseFloat($("wa_oz").value); if (oz > 0) { await this.ws("water/add", { oz, date }); this._toast(`Added ${oz} oz`); } return this._closeSheet(); }
-      case "save-weight2": { const w = parseFloat($("w_val2").value); if (!(w > 50)) return this._toast("Enter your weight"); const bf = $("w_bf2").value; await this.ws("weight/add", { weight: w, body_fat: bf ? +bf : null, date }); this._toast("Weight saved"); return this._closeSheet(); }
-      case "log-weight": { const w = parseFloat($("w_val").value); if (!(w > 50)) return this._toast("Enter your weight"); const bf = $("w_bf").value; await this.ws("weight/add", { weight: w, body_fat: bf ? +bf : null, date: $("w_date").value }); return this._toast("Weight saved"); }
+      case "save-weight2": { const w = parseFloat($("w_val2").value); if (!(w > 50)) return this._toast("Enter your weight"); await this.ws("weight/add", { weight: w, date }); this._toast("Weight saved"); return this._closeSheet(); }
+      case "log-weight": { const w = parseFloat($("w_val").value); if (!(w > 50)) return this._toast("Enter your weight"); await this.ws("weight/add", { weight: w, date: $("w_date").value }); return this._toast("Weight saved"); }
       case "log-bp": { const s = parseInt($("bp_s").value), d = parseInt($("bp_d").value); if (!(s > 50 && d > 30)) return this._toast("Enter both numbers"); const p = $("bp_p").value; await this.ws("bp/add", { systolic: s, diastolic: d, pulse: p ? +p : null, note: $("bp_n").value || null, date: $("bp_date").value }); return this._toast("Blood pressure saved"); }
       case "copy-hook": { const i = $("hook"); i.select(); try { await navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand?.("copy"); } return this._toast("Copied"); }
       case "target": this._settings.settings.notify_target = v; this.shadowRoot.querySelectorAll(".seg button").forEach((b) => { b.classList.toggle("on", b.dataset.v === v); b.setAttribute("aria-checked", b.dataset.v === v); }); return;
@@ -690,9 +694,9 @@ class WeightTrackerCard extends HTMLElement {
   _css() {
     return `
 :host{display:block;--surface:var(--card-background-color,#fff);--ink:var(--primary-text-color);--ink2:var(--secondary-text-color);--line:var(--divider-color,rgba(127,127,127,.25));--acc:var(--primary-color,#2a78d6);
- --s-kcal:#2a78d6;--s-weight:#2a78d6;--s-water:#2a78d6;--s-protein:#2a78d6;--s-carbs:#eb6834;--s-fat:#1baf7a;--s-sys:#2a78d6;--s-dia:#eb6834;--crit:#d03b3b;--good:#0ca30c;font-size:15px;color:var(--ink)}
+ --s-kcal:#2a78d6;--s-weight:#2a78d6;--s-water:#2a78d6;--s-protein:#2a78d6;--s-carbs:#eb6834;--s-fat:#1baf7a;--s-sys:#2a78d6;--s-dia:#eb6834;--s-steps:#2a78d6;--crit:#d03b3b;--good:#0ca30c;font-size:15px;color:var(--ink)}
 
-:host([dark]){--s-kcal:#3987e5;--s-weight:#3987e5;--s-water:#3987e5;--s-protein:#3987e5;--s-carbs:#d95926;--s-fat:#199e70;--s-sys:#3987e5;--s-dia:#d95926}
+:host([dark]){--s-kcal:#3987e5;--s-weight:#3987e5;--s-water:#3987e5;--s-protein:#3987e5;--s-carbs:#d95926;--s-fat:#199e70;--s-sys:#3987e5;--s-dia:#d95926;--s-steps:#3987e5}
 *{box-sizing:border-box}
 .wrap{max-width:760px;margin:0 auto;padding:8px 12px 80px}
 .tabs{display:flex;gap:4px;position:sticky;top:0;z-index:3;background:var(--primary-background-color,var(--surface));padding:6px 0 8px}

@@ -8,7 +8,7 @@ Readings are de-duplicated by their time, so running the Shortcut again, or read
 
 ## 1. Let your scale write to Health
 
-In your scale's app, turn on writing **Weight** (and **Body Fat Percentage**, if it measures it) to Apple Health. Do the same for a blood-pressure cuff.
+In your scale's app, turn on writing **Weight** to Apple Health. Do the same for a blood-pressure cuff.
 
 ## 2. Create the "Sync Health to Home" Shortcut
 
@@ -63,3 +63,47 @@ A JSON (or form) body with any of these keys. Each value can be a single value, 
 | `note` | A note |
 
 The `weight_tracker.ingest` action takes the same fields from automations.
+
+## Alternative: HealthSync (no Shortcut)
+
+If you'd rather not build a Shortcut, the [HealthSync](https://github.com/WeaveHubHQ/healthsync-ha) iOS app and its Home Assistant integration (HACS) push Apple Health data into sensors on their own. Two small automations then copy those sensors into the Weight Tracker. Replace `sensor.my_health_weight` and `sensor.my_health_steps_daily_total` with the sensor names HealthSync creates for you.
+
+```yaml
+# Weight: log each new reading at the time it was measured
+alias: Weight Tracker - weight from HealthSync
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: sensor.my_health_weight
+    attribute: last_updated
+conditions:
+  - condition: template
+    value_template: "{{ states('sensor.my_health_weight') | is_number }}"
+actions:
+  - action: weight_tracker.log_weight
+    data:
+      weight: "{{ states('sensor.my_health_weight') | float }}"
+      unit: lb
+      source: healthsync
+      when: "{{ state_attr('sensor.my_health_weight', 'last_updated') }}"
+```
+
+```yaml
+# Steps: keep the day's total up to date (shown on the Trends tab)
+alias: Weight Tracker - steps from HealthSync
+mode: queued
+triggers:
+  - trigger: state
+    entity_id: sensor.my_health_steps_daily_total
+conditions:
+  - condition: template
+    value_template: "{{ states('sensor.my_health_steps_daily_total') | is_number }}"
+actions:
+  - action: weight_tracker.log_steps
+    data:
+      steps: "{{ states('sensor.my_health_steps_daily_total') | int }}"
+      source: healthsync
+      when: "{{ state_attr('sensor.my_health_steps_daily_total', 'last_updated') or now().isoformat() }}"
+```
+
+Weights are de-duplicated by source and time, and steps keep one total per day, so resends are harmless.

@@ -9,6 +9,11 @@ log_water:
   fields:
     oz: {required: true, example: 16, selector: {number: {min: 1, max: 128}}}
     when: {selector: {text: {}}}
+log_steps:
+  fields:
+    steps: {required: true, example: 8000, selector: {number: {min: 0, max: 200000}}}
+    source: {selector: {text: {}}}
+    when: {selector: {text: {}}}
 log_bp:
   fields:
     systolic: {required: true, example: 120, selector: {number: {min: 60, max: 260}}}
